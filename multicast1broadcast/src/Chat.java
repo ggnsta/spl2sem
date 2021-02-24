@@ -1,26 +1,36 @@
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.IOException;
+import java.net.*;
 
 public class Chat  implements Runnable{
     protected DatagramSocket udpSocket = null;
     protected int serverPort = 49005;
     protected InetAddress broadcastIP = null;
     protected MyGUI gui;
+    protected MulticastSocket socket = null;
+    protected String groupAddress =  "232.0.0.0";
+    protected int multiPort = 49007;
 
 
 
-    public Chat(InetAddress broadcastIP, MyGUI gui) {
+    public Chat(InetAddress broadcastIP, MyGUI gui)  {
         this.broadcastIP = broadcastIP;
         this.gui=gui;
     }
 
+    @Deprecated
     @Override
     public void run ()
     {
-
+        try {
+            socket = new MulticastSocket(49007);
+            InetAddress group = InetAddress.getByName(groupAddress);
+            socket.joinGroup(group);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         createUDPSocket();
         selfDiscovery();
+        listenMulti();
 
         while (true){
             get();
@@ -61,6 +71,46 @@ public class Chat  implements Runnable{
             ex.printStackTrace();
         }
 
+    }
+    public void send_multi(String msg) {
+        try {
+        byte[] sendingDataBuffer = new byte[ 512];
+        sendingDataBuffer=msg.getBytes();
+        DatagramPacket outputPacket = new DatagramPacket(
+                sendingDataBuffer, sendingDataBuffer.length,
+                InetAddress.getByName(groupAddress),49006
+        );
+
+            socket.send(outputPacket);
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+
+    }
+    public void listenMulti(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+
+                    get_multi();
+
+                }
+            }
+        }).start();
+    }
+    public String get_multi()
+    {
+        try {
+            byte[] receivingDataBuffer = new byte[512];
+            DatagramPacket receivingPacket = new DatagramPacket(receivingDataBuffer, receivingDataBuffer.length);
+            socket.receive(receivingPacket);
+            String msg = new String (receivingPacket.getData());
+            gui.chatArea.append("!!!"+msg);
+        }catch (Exception x) {
+        x.printStackTrace();
+    }
+        return null;
     }
     public String get() {
         try {

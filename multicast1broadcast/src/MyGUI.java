@@ -102,8 +102,16 @@ public class MyGUI {
             public void keyPressed(KeyEvent e) {
                 int key = e.getKeyCode();
                 if (key == KeyEvent.VK_ENTER) {
-                    chat.send(jtfMessage.getText());
-                    jtfMessage.setText(null);
+
+                    if (radio_broadcast.isSelected()) {
+                        chat.send(jtfMessage.getText());
+                        jtfMessage.setText(null);
+                    }
+                    else {
+                        chat.send_multi(jtfMessage.getText());
+                        chatArea.append(jtfMessage.getText());
+                        jtfMessage.setText(null);
+                    }
                 }
             }
         });
